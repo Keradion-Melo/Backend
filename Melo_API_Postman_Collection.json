@@ -49,19 +49,32 @@
           "name": "Register Success",
           "event": [
             {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const ts = Date.now();",
+                  "pm.collectionVariables.set(\"registerUsername\", \"user_\" + ts);",
+                  "pm.collectionVariables.set(\"registerEmail\", \"user_\" + ts + \"@melo.test\");",
+                  "pm.collectionVariables.set(\"registerPassword\", \"MeloSecret123!\");",
+                  "pm.collectionVariables.set(\"sessionId\", \"session_\" + ts);"
+                ]
+              }
+            },
+            {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 201 or 400/409 (if exists)\", function () {",
-                  "    pm.expect(pm.response.code).to.be.oneOf([201, 400, 409]);",
+                  "pm.test(\"Status code is 201 Created (or 200)\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
                   "});",
                   "var jsonData = pm.response.json();",
-                  "if(jsonData.data && jsonData.data.accessToken) {",
+                  "if (jsonData.data && jsonData.data.accessToken) {",
                   "    pm.collectionVariables.set(\"accessToken\", jsonData.data.accessToken);",
                   "    pm.collectionVariables.set(\"refreshToken\", jsonData.data.refreshToken);",
                   "}"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
           ],
@@ -75,7 +88,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"testuser@example.com\",\n  \"username\": \"testuser\",\n  \"password\": \"securepassword123\",\n  \"displayName\": \"Test User\"\n}"
+              "raw": "{\n  \"email\": \"{{registerEmail}}\",\n  \"username\": \"{{registerUsername}}\",\n  \"password\": \"{{registerPassword}}\",\n  \"displayName\": \"Melo Dynamic Tester\"\n}"
             },
             "url": {
               "raw": "{{protocol}}://{{host}}:{{port}}/api/auth/register",
@@ -142,17 +155,17 @@
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 200 or 201\", function () {",
-                  "    pm.expect(pm.response.code).to.be.oneOf([200,201]);",
+                  "pm.test(\"Status code is 200 OK (or 201)\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
                   "});",
                   "var jsonData = pm.response.json();",
-                  "if(jsonData.data && jsonData.data.accessToken) {",
+                  "if (jsonData.data && jsonData.data.accessToken) {",
                   "    pm.collectionVariables.set(\"accessToken\", jsonData.data.accessToken);",
                   "    pm.collectionVariables.set(\"refreshToken\", jsonData.data.refreshToken);",
                   "}"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
           ],
@@ -166,7 +179,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"emailOrUsername\": \"testuser@example.com\",\n  \"password\": \"securepassword123\"\n}"
+              "raw": "{\n  \"emailOrUsername\": \"{{registerEmail}}\",\n  \"password\": \"{{registerPassword}}\"\n}"
             },
             "url": {
               "raw": "{{protocol}}://{{host}}:{{port}}/api/auth/login",
@@ -190,12 +203,19 @@
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 200 or 201\", function () {",
-                  "    pm.expect(pm.response.code).to.be.oneOf([200,201]);",
-                  "});"
-                ],
-                "type": "text/javascript"
+                  "pm.test(\"Status code is 200 OK (or 201)\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.data && jsonData.data.accessToken) {",
+                  "    pm.collectionVariables.set(\"accessToken\", jsonData.data.accessToken);",
+                  "    if (jsonData.data.refreshToken) {",
+                  "        pm.collectionVariables.set(\"refreshToken\", jsonData.data.refreshToken);",
+                  "    }",
+                  "}"
+                ]
               }
             }
           ],
@@ -478,6 +498,53 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "Get Stream (YouTube)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200 or 201\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "pm.test(\"Returns streamUrl and metadata\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data.streamUrl).to.not.be.undefined;",
+                  "    pm.expect(jsonData.data.metadata).to.be.an(\"object\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"trackId\": \"dQw4w9WgXcQ\",\n  \"service\": \"youtube\"\n}"
+            },
+            "url": {
+              "raw": "{{protocol}}://{{host}}:{{port}}/api/stream",
+              "protocol": "{{protocol}}",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{port}}",
+              "path": [
+                "api",
+                "stream"
+              ]
+            }
+          },
+          "response": []
         }
       ]
     },
@@ -538,6 +605,56 @@
                 {
                   "key": "service",
                   "value": "jamendo"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Search Tracks (YouTube)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Returns results array\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data.results).to.be.an(\"array\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{protocol}}://{{host}}:{{port}}/api/search?q=rock&limit=5&service=youtube",
+              "protocol": "{{protocol}}",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{port}}",
+              "path": [
+                "api",
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "rock"
+                },
+                {
+                  "key": "limit",
+                  "value": "5"
+                },
+                {
+                  "key": "service",
+                  "value": "youtube"
                 }
               ]
             }
@@ -641,6 +758,50 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"trackId\": \"2058152\",\n  \"service\": \"jamendo\",\n  \"title\": \"Sample Track\",\n  \"artist\": \"Sample Artist\",\n  \"duration\": 180\n}"
+            },
+            "url": {
+              "raw": "{{protocol}}://{{host}}:{{port}}/api/playlists/{{playlistId}}/tracks",
+              "protocol": "{{protocol}}",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{port}}",
+              "path": [
+                "api",
+                "playlists",
+                "{{playlistId}}",
+                "tracks"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Add Second Track to Playlist",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200 or 201\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"trackId\": \"dQw4w9WgXcQ\",\n  \"service\": \"youtube\",\n  \"title\": \"Never Gonna Give You Up\",\n  \"artist\": \"Rick Astley\",\n  \"duration\": 213\n}"
             },
             "url": {
               "raw": "{{protocol}}://{{host}}:{{port}}/api/playlists/{{playlistId}}/tracks",
@@ -1684,58 +1845,69 @@
   "variable": [
     {
       "key": "protocol",
-      "value": "http",
-      "type": "string"
+      "value": "http"
     },
     {
       "key": "host",
-      "value": "localhost",
-      "type": "string"
+      "value": "localhost"
     },
     {
       "key": "port",
-      "value": "3000",
-      "type": "string"
+      "value": "3000"
     },
     {
       "key": "accessToken",
-      "value": "",
-      "type": "string"
+      "value": ""
     },
     {
       "key": "refreshToken",
-      "value": "",
-      "type": "string"
+      "value": ""
     },
     {
       "key": "sessionId",
-      "value": "postman-test-session",
-      "type": "string"
+      "value": "session_init"
     },
     {
       "key": "playlistId",
-      "value": "",
-      "type": "string"
+      "value": ""
     },
     {
       "key": "registerEmail",
-      "value": "testuser@example.com",
-      "type": "string"
+      "value": ""
     },
     {
       "key": "registerUsername",
-      "value": "testuser",
-      "type": "string"
+      "value": ""
+    },
+    {
+      "key": "registerPassword",
+      "value": ""
     },
     {
       "key": "userId",
-      "value": "",
-      "type": "string"
+      "value": ""
     },
     {
       "key": "historyId",
-      "value": "",
-      "type": "string"
+      "value": ""
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Global auto-generation of unique credentials and session on test run",
+          "if (!pm.collectionVariables.get(\"registerEmail\") || pm.info.iteration === 0) {",
+          "    const ts = Date.now();",
+          "    pm.collectionVariables.set(\"registerUsername\", \"user_\" + ts);",
+          "    pm.collectionVariables.set(\"registerEmail\", \"user_\" + ts + \"@melo.test\");",
+          "    pm.collectionVariables.set(\"registerPassword\", \"MeloSecret123!\");",
+          "    pm.collectionVariables.set(\"sessionId\", \"session_\" + ts);",
+          "}"
+        ]
+      }
     }
   ]
 }

@@ -20,9 +20,10 @@ export class StreamingController {
 
     // Auto-record play history
     try {
-      if (req.user?.userId) {
+      const userId = req.user?._id ? req.user._id.toString() : req.user?.userId;
+      if (userId) {
         await this.historyService.recordPlay(
-          req.user.userId,
+          userId,
           {
             trackId: dto.trackId,
             service: dto.service,

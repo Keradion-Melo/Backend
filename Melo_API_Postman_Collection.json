@@ -36,6 +36,9 @@
                 "api",
                 "health"
               ]
+            },
+            "auth": {
+              "type": "noauth"
             }
           },
           "response": []
@@ -53,6 +56,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "// Generate unique credentials and session ID for this entire test run",
                   "const ts = Date.now();",
                   "pm.collectionVariables.set(\"registerUsername\", \"user_\" + ts);",
                   "pm.collectionVariables.set(\"registerEmail\", \"user_\" + ts + \"@melo.test\");",
@@ -102,6 +106,9 @@
                 "auth",
                 "register"
               ]
+            },
+            "auth": {
+              "type": "noauth"
             }
           },
           "response": []
@@ -145,6 +152,9 @@
                 "auth",
                 "register"
               ]
+            },
+            "auth": {
+              "type": "noauth"
             }
           },
           "response": []
@@ -193,6 +203,9 @@
                 "auth",
                 "login"
               ]
+            },
+            "auth": {
+              "type": "noauth"
             }
           },
           "response": []
@@ -243,6 +256,9 @@
                 "auth",
                 "refresh"
               ]
+            },
+            "auth": {
+              "type": "noauth"
             }
           },
           "response": []
@@ -542,6 +558,16 @@
                 "api",
                 "stream"
               ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": []
@@ -655,6 +681,16 @@
                 {
                   "key": "service",
                   "value": "youtube"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
                 }
               ]
             }
@@ -815,6 +851,16 @@
                 "playlists",
                 "{{playlistId}}",
                 "tracks"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
               ]
             }
           },
@@ -1892,22 +1938,15 @@
       "value": ""
     }
   ],
-  "event": [
-    {
-      "listen": "prerequest",
-      "script": {
-        "type": "text/javascript",
-        "exec": [
-          "// Global auto-generation of unique credentials and session on test run",
-          "if (!pm.collectionVariables.get(\"registerEmail\") || pm.info.iteration === 0) {",
-          "    const ts = Date.now();",
-          "    pm.collectionVariables.set(\"registerUsername\", \"user_\" + ts);",
-          "    pm.collectionVariables.set(\"registerEmail\", \"user_\" + ts + \"@melo.test\");",
-          "    pm.collectionVariables.set(\"registerPassword\", \"MeloSecret123!\");",
-          "    pm.collectionVariables.set(\"sessionId\", \"session_\" + ts);",
-          "}"
-        ]
+  "event": [],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
       }
-    }
-  ]
+    ]
+  }
 }

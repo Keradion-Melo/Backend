@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
+import youtubedl from 'youtube-dl-exec';
 import { IStreamingService, StreamMetadata, StreamResult, SearchResultItem } from '../interfaces/streaming-service.interface';
 
 @Injectable()
@@ -50,8 +51,22 @@ export class YouTubeService implements IStreamingService {
 
   async getStreamUrl(trackId: string): Promise<StreamResult> {
     const metadata = await this.getMetadata(trackId);
-    // YouTube audio proxy / stream resolver or direct embed format
-    const streamUrl = `https://www.youtube.com/watch?v=${trackId}`;
+    let streamUrl: string;
+
+    try {
+      // Extract direct audio stream URL via youtube-dl-exec
+      const output = await youtubedl(`https://www.youtube.com/watch?v=${trackId}`, {
+        getUrl: true,
+        format: 'bestaudio[ext=m4a]/bestaudio/best',
+        noCheckCertificates: true,
+        noWarnings: true,
+      });
+
+      streamUrl = typeof output === 'string' ? output.trim() : `https://www.youtube.com/watch?v=${trackId}`;
+    } catch (err: any) {
+      this.logger.warn(`Failed to extract direct audio URL with youtube-dl-exec for ${trackId}: ${err?.message || err}`);
+      streamUrl = `https://www.youtube.com/watch?v=${trackId}`;
+    }
 
     return {
       streamUrl,

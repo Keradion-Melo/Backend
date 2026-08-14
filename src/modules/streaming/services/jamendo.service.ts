@@ -56,11 +56,43 @@ export class JamendoService implements IStreamingService {
   }
 
   async getStreamUrl(trackId: string): Promise<StreamResult> {
-    const metadata = await this.getMetadata(trackId);
-    const streamUrl = `https://api.jamendo.com/v3.0/tracks/file/?id=${trackId}&client_id=${this.clientId}&audioformat=mp32`;
+    try {
+      const response = await axios.get(`${this.apiBase}/tracks/`, {
+        params: {
+          client_id: this.clientId,
+          format: 'json',
+          id: trackId,
+        },
+        timeout: 5000,
+      });
 
+      const track = response.data?.results?.[0];
+      if (track) {
+        // Pure inline CDN audio stream (audio/mpeg) without Content-Disposition: attachment
+        const streamUrl =
+          track.audio ||
+          `https://prod-1.storage.jamendo.com/download/track/${trackId}/mp32/` ||
+          `https://api.jamendo.com/v3.0/tracks/file/?id=${trackId}&client_id=${this.clientId}&audioformat=mp32`;
+
+        return {
+          streamUrl,
+          metadata: {
+            title: track.name || `Jamendo Track #${trackId}`,
+            artist: track.artist_name || 'Jamendo Artist',
+            albumArt: track.album_image || track.image || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300',
+            duration: track.duration || 180,
+            genre: track.musicinfo?.tags?.genres || ['indie'],
+            popularity: track.stats?.rate || 50,
+          },
+        };
+      }
+    } catch (err: any) {
+      this.logger.warn(`Failed to fetch Jamendo stream for ${trackId}: ${err?.message || err}`);
+    }
+
+    const metadata = await this.getMetadata(trackId);
     return {
-      streamUrl,
+      streamUrl: `https://prod-1.storage.jamendo.com/download/track/${trackId}/mp32/`,
       metadata: {
         title: metadata.title || `Jamendo Track #${trackId}`,
         artist: metadata.artist || 'Jamendo Artist',

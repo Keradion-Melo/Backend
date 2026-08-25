@@ -1,4 +1,13 @@
-import { Controller, Get, Patch, Body, UseGuards, Request, Param, NotFoundException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Patch,
+  Body,
+  UseGuards,
+  Request,
+  Param,
+  NotFoundException,
+} from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -19,7 +28,10 @@ export class UsersController {
 
   @Patch('me')
   async updateProfile(@Request() req, @Body() updateProfileDto: UpdateProfileDto) {
-    const updatedUser = await this.usersService.updateProfile(String(req.user._id), updateProfileDto);
+    const updatedUser = await this.usersService.updateProfile(
+      String(req.user._id),
+      updateProfileDto,
+    );
     if (!updatedUser) {
       throw new NotFoundException('User not found');
     }

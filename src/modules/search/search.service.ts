@@ -10,7 +10,11 @@ export class SearchService {
     private readonly metadataCacheService: MetadataCacheService,
   ) {}
 
-  async search(query: string, serviceName: 'jamendo' | 'youtube' = 'jamendo', limit = 20): Promise<{ results: SearchResultItem[] }> {
+  async search(
+    query: string,
+    serviceName: 'jamendo' | 'youtube' = 'jamendo',
+    limit = 20,
+  ): Promise<{ results: SearchResultItem[] }> {
     const service = this.streamingFactory.getService(serviceName);
     const results = await service.search(query, limit);
 

@@ -8,12 +8,12 @@ import { SyncQueueDto } from './dto/sync-queue.dto';
 
 @Injectable()
 export class QueueService {
-  constructor(
-    @InjectModel(Queue.name) private readonly queueModel: Model<QueueDocument>,
-  ) { }
+  constructor(@InjectModel(Queue.name) private readonly queueModel: Model<QueueDocument>) {}
 
   async getQueue(userId: string, sessionId: string): Promise<QueueDocument> {
-    let queue = await this.queueModel.findOne({ userId: new Types.ObjectId(userId), sessionId }).exec();
+    let queue = await this.queueModel
+      .findOne({ userId: new Types.ObjectId(userId), sessionId })
+      .exec();
 
     if (!queue) {
       queue = new this.queueModel({
@@ -30,12 +30,15 @@ export class QueueService {
     return queue;
   }
 
-  async addTrack(userId: string, sessionId: string, trackDto: AddQueueTrackDto): Promise<QueueDocument> {
+  async addTrack(
+    userId: string,
+    sessionId: string,
+    trackDto: AddQueueTrackDto,
+  ): Promise<QueueDocument> {
     const queue = await this.getQueue(userId, sessionId);
 
-    const newPosition = queue.tracks.length > 0
-      ? Math.max(...queue.tracks.map(t => t.position)) + 1
-      : 0;
+    const newPosition =
+      queue.tracks.length > 0 ? Math.max(...queue.tracks.map((t) => t.position)) + 1 : 0;
 
     const trackObj = {
       trackId: trackDto.trackId,
@@ -55,7 +58,7 @@ export class QueueService {
   async removeTrack(userId: string, sessionId: string, position: number): Promise<QueueDocument> {
     const queue = await this.getQueue(userId, sessionId);
 
-    queue.tracks = queue.tracks.filter(t => t.position !== position);
+    queue.tracks = queue.tracks.filter((t) => t.position !== position);
 
     // adjust currentIndex if necessary
     if (queue.currentIndex >= queue.tracks.length) {
@@ -73,7 +76,7 @@ export class QueueService {
     const reorderedTracks = [];
     for (let i = 0; i < order.length; i++) {
       const pos = order[i];
-      const track = queue.tracks.find(t => t.position === pos);
+      const track = queue.tracks.find((t) => t.position === pos);
       if (track) {
         reorderedTracks.push({ ...track, position: i }); // assign new position
       }
@@ -92,7 +95,11 @@ export class QueueService {
     return queue.save();
   }
 
-  async updateCurrent(userId: string, sessionId: string, updateDto: UpdateCurrentDto): Promise<QueueDocument> {
+  async updateCurrent(
+    userId: string,
+    sessionId: string,
+    updateDto: UpdateCurrentDto,
+  ): Promise<QueueDocument> {
     const queue = await this.getQueue(userId, sessionId);
 
     if (updateDto.currentIndex !== undefined) queue.currentIndex = updateDto.currentIndex;
@@ -111,7 +118,11 @@ export class QueueService {
     return queue.save();
   }
 
-  async syncQueue(userId: string, sessionId: string, syncDto: SyncQueueDto): Promise<QueueDocument> {
+  async syncQueue(
+    userId: string,
+    sessionId: string,
+    syncDto: SyncQueueDto,
+  ): Promise<QueueDocument> {
     const queue = await this.getQueue(userId, sessionId);
 
     queue.tracks = syncDto.tracks.map((t, index) => ({

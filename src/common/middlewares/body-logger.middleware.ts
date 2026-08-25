@@ -5,14 +5,16 @@ import { Request, Response, NextFunction } from 'express';
 export class BodyLoggerMiddleware implements NestMiddleware {
   private readonly logger = new Logger('HTTP-Body');
 
-  use(req: Request, res: Response, next: NextFunction) {
+  use(req: Request, res: Response, next: NextFunction): void {
     if (process.env.NODE_ENV !== 'production') {
       if (req.body && Object.keys(req.body).length > 0) {
-        this.logger.debug(`[Request] ${req.method} ${req.originalUrl} - Body: ${JSON.stringify(req.body)}`);
+        this.logger.debug(
+          `[Request] ${req.method} ${req.originalUrl} - Body: ${JSON.stringify(req.body)}`,
+        );
       } else {
         this.logger.debug(`[Request] ${req.method} ${req.originalUrl} - No Body`);
       }
-      
+
       const oldSend = res.send;
       res.send = (data) => {
         let parsedData = data;
@@ -20,9 +22,13 @@ export class BodyLoggerMiddleware implements NestMiddleware {
           if (typeof data === 'string') {
             parsedData = JSON.parse(data);
           }
-        } catch (e) {}
-        
-        this.logger.debug(`[Response] ${req.method} ${req.originalUrl} - Body: ${JSON.stringify(parsedData)}`);
+        } catch {
+          // Keep raw data if not json parsable
+        }
+
+        this.logger.debug(
+          `[Response] ${req.method} ${req.originalUrl} - Body: ${JSON.stringify(parsedData)}`,
+        );
         return oldSend.call(res, data);
       };
     }

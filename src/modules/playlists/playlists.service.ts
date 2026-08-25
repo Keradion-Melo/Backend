@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Playlist, PlaylistDocument } from '../../../schema/playlist.schema';
@@ -24,12 +24,11 @@ export class PlaylistsService {
   }
 
   async findAllForUser(userId: string): Promise<PlaylistDocument[]> {
-    return this.playlistModel.find({
-      $or: [
-        { userId: new Types.ObjectId(userId) },
-        { isPublic: true }
-      ]
-    }).exec();
+    return this.playlistModel
+      .find({
+        $or: [{ userId: new Types.ObjectId(userId) }, { isPublic: true }],
+      })
+      .exec();
   }
 
   async findOne(id: string): Promise<PlaylistDocument | null> {
@@ -44,7 +43,11 @@ export class PlaylistsService {
     await this.playlistModel.findByIdAndDelete(id).exec();
   }
 
-  async addTrack(playlistId: string, userId: string, trackDto: AddTrackDto): Promise<PlaylistDocument | null> {
+  async addTrack(
+    playlistId: string,
+    userId: string,
+    trackDto: AddTrackDto,
+  ): Promise<PlaylistDocument | null> {
     // Enrich metadata cache
     await this.metadataCacheService.enrich({
       trackId: trackDto.trackId,
@@ -55,40 +58,51 @@ export class PlaylistsService {
       duration: trackDto.duration,
     });
 
-    return this.playlistModel.findByIdAndUpdate(
-      playlistId,
-      {
-        $push: {
-          tracks: {
-            ...trackDto,
-            addedBy: new Types.ObjectId(userId),
-            addedAt: new Date(),
+    return this.playlistModel
+      .findByIdAndUpdate(
+        playlistId,
+        {
+          $push: {
+            tracks: {
+              ...trackDto,
+              addedBy: new Types.ObjectId(userId),
+              addedAt: new Date(),
+            },
           },
         },
-      },
-      { new: true }
-    ).exec();
+        { new: true },
+      )
+      .exec();
   }
 
   async removeTrack(playlistId: string, trackId: string): Promise<PlaylistDocument | null> {
-    return this.playlistModel.findByIdAndUpdate(
-      playlistId,
-      {
-        $pull: {
-          tracks: { trackId },
+    return this.playlistModel
+      .findByIdAndUpdate(
+        playlistId,
+        {
+          $pull: {
+            tracks: { trackId },
+          },
         },
-      },
-      { new: true }
-    ).exec();
+        { new: true },
+      )
+      .exec();
   }
 
-  async reorderTracks(playlistId: string, reorderDto: ReorderTracksDto): Promise<PlaylistDocument | null> {
+  async reorderTracks(
+    playlistId: string,
+    reorderDto: ReorderTracksDto,
+  ): Promise<PlaylistDocument | null> {
     const playlist = await this.playlistModel.findById(playlistId).exec();
     if (!playlist) return null;
 
     const tracks = playlist.tracks;
-    if (reorderDto.oldIndex < 0 || reorderDto.oldIndex >= tracks.length ||
-        reorderDto.newIndex < 0 || reorderDto.newIndex >= tracks.length) {
+    if (
+      reorderDto.oldIndex < 0 ||
+      reorderDto.oldIndex >= tracks.length ||
+      reorderDto.newIndex < 0 ||
+      reorderDto.newIndex >= tracks.length
+    ) {
       return playlist;
     }
 

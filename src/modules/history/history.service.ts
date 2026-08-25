@@ -16,11 +16,14 @@ export interface TrackInput {
 export class HistoryService {
   private readonly logger = new Logger(HistoryService.name);
 
-  constructor(
-    @InjectModel(History.name) private readonly historyModel: Model<HistoryDocument>,
-  ) {}
+  constructor(@InjectModel(History.name) private readonly historyModel: Model<HistoryDocument>) {}
 
-  async recordPlay(userId: string, trackInput: TrackInput, durationPlayed: number, totalDuration: number): Promise<HistoryDocument> {
+  async recordPlay(
+    userId: string,
+    trackInput: TrackInput,
+    durationPlayed: number,
+    totalDuration: number,
+  ): Promise<HistoryDocument> {
     const historyEntry = new this.historyModel({
       userId: new Types.ObjectId(userId),
       ...trackInput,
@@ -45,10 +48,12 @@ export class HistoryService {
   }
 
   async removeHistoryEntry(userId: string, id: string): Promise<void> {
-    await this.historyModel.findOneAndDelete({
-      _id: new Types.ObjectId(id),
-      userId: new Types.ObjectId(userId),
-    }).exec();
+    await this.historyModel
+      .findOneAndDelete({
+        _id: new Types.ObjectId(id),
+        userId: new Types.ObjectId(userId),
+      })
+      .exec();
   }
 
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
@@ -57,10 +62,12 @@ export class HistoryService {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    const result = await this.historyModel.deleteMany({
-      playedAt: { $lt: thirtyDaysAgo },
-    }).exec();
-    
+    const result = await this.historyModel
+      .deleteMany({
+        playedAt: { $lt: thirtyDaysAgo },
+      })
+      .exec();
+
     this.logger.debug(`Deleted ${result.deletedCount} old history entries`);
   }
 }

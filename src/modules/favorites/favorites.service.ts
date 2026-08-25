@@ -30,11 +30,13 @@ export class FavoritesService {
   }
 
   async removeFavorite(userId: string, trackId: string, service: string): Promise<void> {
-    await this.favoriteModel.findOneAndDelete({
-      userId: new Types.ObjectId(userId),
-      trackId,
-      service: service as any,
-    }).exec();
+    await this.favoriteModel
+      .findOneAndDelete({
+        userId: new Types.ObjectId(userId),
+        trackId,
+        service: service as any,
+      })
+      .exec();
   }
 
   async findAll(userId: string): Promise<FavoriteDocument[]> {

@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Delete, Body, Param, Query, UseGuards, Request, BadRequestException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Delete,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+  Request,
+  BadRequestException,
+} from '@nestjs/common';
 import { FavoritesService } from './favorites.service';
 import { AddFavoriteDto } from './dto/add-favorite.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -20,7 +31,9 @@ export class FavoritesController {
     @Query('service') service: string,
   ) {
     if (!service || !['jamendo', 'youtube'].includes(service)) {
-      throw new BadRequestException('Valid service query parameter is required (jamendo or youtube)');
+      throw new BadRequestException(
+        'Valid service query parameter is required (jamendo or youtube)',
+      );
     }
     return this.favoritesService.removeFavorite(req.user._id.toString(), trackId, service);
   }

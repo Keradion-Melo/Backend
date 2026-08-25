@@ -5,10 +5,7 @@ import { StreamingModule } from '../streaming/streaming.module';
 import { MetadataModule } from '../metadata/metadata.module';
 
 @Module({
-  imports: [
-    StreamingModule,
-    MetadataModule,
-  ],
+  imports: [StreamingModule, MetadataModule],
   controllers: [SearchController],
   providers: [SearchService],
   exports: [SearchService],

@@ -37,9 +37,7 @@ import {
     MongooseModule.forRoot(process.env.MONGO_URI as string, {
       // recommended for NestJS / Mongoose 7+
       connectionFactory: (connection) => {
-        connection.on('connected', () =>
-          console.log('✅  MongoDB connected'),
-        );
+        connection.on('connected', () => console.log('✅  MongoDB connected'));
         connection.on('error', (err: Error) =>
           console.error('❌  MongoDB connection error:', err.message),
         );
@@ -68,9 +66,7 @@ import {
     RecommendationsModule,
     ScheduleModule.forRoot(),
   ],
-  controllers: [
-    AppController
-  ],
+  controllers: [AppController],
   providers: [
     {
       provide: APP_GUARD,

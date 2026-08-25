@@ -11,15 +11,13 @@ export class LoggingInterceptor implements NestInterceptor {
     const { method, url } = request;
     const now = Date.now();
 
-    return next
-      .handle()
-      .pipe(
-        tap(() => {
-          const response = context.switchToHttp().getResponse();
-          const statusCode = response.statusCode;
-          const delay = Date.now() - now;
-          this.logger.log(`${method} ${url} ${statusCode} - ${delay}ms`);
-        }),
-      );
+    return next.handle().pipe(
+      tap(() => {
+        const response = context.switchToHttp().getResponse();
+        const statusCode = response.statusCode;
+        const delay = Date.now() - now;
+        this.logger.log(`${method} ${url} ${statusCode} - ${delay}ms`);
+      }),
+    );
   }
 }

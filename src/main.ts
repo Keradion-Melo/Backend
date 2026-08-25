@@ -12,7 +12,7 @@ async function bootstrap(): Promise<void> {
 
   // ── CORS ──────────────────────────────────────────────────────────────────
   app.enableCors({
-    origin: '*',          // tighten in production
+    origin: '*', // tighten in production
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
@@ -24,9 +24,9 @@ async function bootstrap(): Promise<void> {
   // ── Validation pipe ──────────────────────────────────────────────────────
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true,            // strip unknown properties
+      whitelist: true, // strip unknown properties
       forbidNonWhitelisted: true, // 400 if unknown property sent
-      transform: true,            // auto-cast payloads to DTO types
+      transform: true, // auto-cast payloads to DTO types
       transformOptions: { enableImplicitConversion: true },
     }),
   );
@@ -35,10 +35,7 @@ async function bootstrap(): Promise<void> {
   app.useGlobalFilters(new AllExceptionsFilter());
 
   // ── Global response interceptor ───────────────────────────────────────────
-  app.useGlobalInterceptors(
-    new LoggingInterceptor(),
-    new ResponseInterceptor()
-  );
+  app.useGlobalInterceptors(new LoggingInterceptor(), new ResponseInterceptor());
 
   // ── Swagger API Documentation ───────────────────────────────────────────────
   const config = new DocumentBuilder()

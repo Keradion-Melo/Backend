@@ -1,0 +1,74 @@
+name: Melo Backend CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  code-quality:
+    name: Code Quality & Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Compile TypeScript & Build NestJS App
+        run: npm run build
+
+  api-smoke-tests:
+    name: API Smoke & Integration Tests
+    runs-on: ubuntu-latest
+    needs: code-quality
+    services:
+      mongodb:
+        image: mongo:7.0
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.runCommand({ ping: 1 })'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      NODE_ENV: test
+      PORT: 3000
+      MONGO_URI: mongodb://localhost:27017/melo_test
+      JWT_SECRET: ci_test_jwt_secret_must_be_long_enough_for_security_123
+      JWT_EXPIRES_IN: 15m
+      REFRESH_SECRET: ci_test_refresh_secret_must_be_long_enough_for_security_123
+      REFRESH_EXPIRES_IN: 7d
+      JAMENDO_CLIENT_ID: ${{ secrets.JAMENDO_CLIENT_ID || 'e278e205' }}
+      JAMENDO_API_BASE: https://api.jamendo.com/v3.0
+      YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY || '' }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Run API Smoke Test Suite
+        run: npm run test:smoke

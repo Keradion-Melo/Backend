@@ -5,9 +5,7 @@ import { HistoryController } from './history.controller';
 import { History, HistorySchema } from '../../../schema/history.schema';
 
 @Module({
-  imports: [
-    MongooseModule.forFeature([{ name: History.name, schema: HistorySchema }]),
-  ],
+  imports: [MongooseModule.forFeature([{ name: History.name, schema: HistorySchema }])],
   controllers: [HistoryController],
   providers: [HistoryService],
   exports: [HistoryService],

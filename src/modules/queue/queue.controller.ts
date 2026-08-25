@@ -1,4 +1,16 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request, Put, ParseIntPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  Request,
+  Put,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { QueueService } from './queue.service';
 import { AddQueueTrackDto } from './dto/add-track.dto';
 import { UpdateCurrentDto } from './dto/update-current.dto';
@@ -29,12 +41,20 @@ export class QueueController {
 
   @Put('reorder')
   reorderTracks(@Request() req, @Body() reorderDto: ReorderQueueDto) {
-    return this.queueService.reorderTracks(req.user._id.toString(), req.sessionId, reorderDto.order);
+    return this.queueService.reorderTracks(
+      req.user._id.toString(),
+      req.sessionId,
+      reorderDto.order,
+    );
   }
 
   @Patch('current')
   updateCurrent(@Request() req, @Body() updateCurrentDto: UpdateCurrentDto) {
-    return this.queueService.updateCurrent(req.user._id.toString(), req.sessionId, updateCurrentDto);
+    return this.queueService.updateCurrent(
+      req.user._id.toString(),
+      req.sessionId,
+      updateCurrentDto,
+    );
   }
 
   @Delete('clear')

@@ -21,26 +21,31 @@ export interface TrackMetadata {
 export class MetadataCacheService {
   constructor(
     @InjectModel(MetadataCache.name) private readonly metadataModel: Model<MetadataCacheDocument>,
-    @Inject(forwardRef(() => StreamingServiceFactory)) private readonly streamingFactory: StreamingServiceFactory,
+    @Inject(forwardRef(() => StreamingServiceFactory))
+    private readonly streamingFactory: StreamingServiceFactory,
   ) {}
 
-  async enrich(trackData: Partial<TrackMetadata> & { trackId: string, service: 'jamendo' | 'youtube' }): Promise<MetadataCacheDocument> {
+  async enrich(
+    trackData: Partial<TrackMetadata> & { trackId: string; service: 'jamendo' | 'youtube' },
+  ): Promise<MetadataCacheDocument> {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
 
-    return this.metadataModel.findOneAndUpdate(
-      { trackId: trackData.trackId, service: trackData.service },
-      {
-        ...trackData,
-        expiresAt,
-      },
-      { new: true, upsert: true }
-    ).exec();
+    return this.metadataModel
+      .findOneAndUpdate(
+        { trackId: trackData.trackId, service: trackData.service },
+        {
+          ...trackData,
+          expiresAt,
+        },
+        { new: true, upsert: true },
+      )
+      .exec();
   }
 
   async getOrFetch(trackId: string, service: 'jamendo' | 'youtube'): Promise<TrackMetadata> {
     const cached = await this.metadataModel.findOne({ trackId, service }).exec();
-    
+
     // Check if missing or expired (though MongoDB TTL index automatically removes expired)
     if (cached && cached.expiresAt > new Date()) {
       return cached;
@@ -53,24 +58,31 @@ export class MetadataCacheService {
     expiresAt.setDate(expiresAt.getDate() + 7);
 
     // Save with upsert: true
-    const updated = await this.metadataModel.findOneAndUpdate(
-      { trackId, service },
-      {
-        ...fetchedData,
-        expiresAt,
-      },
-      { new: true, upsert: true }
-    ).exec();
+    const updated = await this.metadataModel
+      .findOneAndUpdate(
+        { trackId, service },
+        {
+          ...fetchedData,
+          expiresAt,
+        },
+        { new: true, upsert: true },
+      )
+      .exec();
 
     return updated;
   }
 
-  async batchFetch(entries: { trackId: string, service: 'jamendo' | 'youtube' }[]): Promise<TrackMetadata[]> {
+  async batchFetch(
+    entries: { trackId: string; service: 'jamendo' | 'youtube' }[],
+  ): Promise<TrackMetadata[]> {
     // For efficiency, we could use Promise.all. A real production app might use a batch endpoint.
-    return Promise.all(entries.map(entry => this.getOrFetch(entry.trackId, entry.service)));
+    return Promise.all(entries.map((entry) => this.getOrFetch(entry.trackId, entry.service)));
   }
 
-  private async fetchFromStreamingService(trackId: string, service: 'jamendo' | 'youtube'): Promise<Partial<TrackMetadata>> {
+  private async fetchFromStreamingService(
+    trackId: string,
+    service: 'jamendo' | 'youtube',
+  ): Promise<Partial<TrackMetadata>> {
     const streamingService = this.streamingFactory.getService(service);
     return streamingService.getMetadata(trackId);
   }

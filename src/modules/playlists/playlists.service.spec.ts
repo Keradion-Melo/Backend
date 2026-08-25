@@ -30,7 +30,7 @@ describe('PlaylistsService', () => {
         {
           provide: MetadataCacheService,
           useValue: mockMetadataCacheService,
-        }
+        },
       ],
     }).compile();
 

@@ -1,7 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
-import { IStreamingService, StreamMetadata, StreamResult, SearchResultItem } from '../interfaces/streaming-service.interface';
+import {
+  IStreamingService,
+  StreamMetadata,
+  StreamResult,
+  SearchResultItem,
+} from '../interfaces/streaming-service.interface';
 
 @Injectable()
 export class JamendoService implements IStreamingService {
@@ -11,7 +16,8 @@ export class JamendoService implements IStreamingService {
 
   constructor(private readonly configService: ConfigService) {
     this.clientId = this.configService.get<string>('jamendo.clientId') || 'default_client_id';
-    this.apiBase = this.configService.get<string>('jamendo.apiBase') || 'https://api.jamendo.com/v3.0';
+    this.apiBase =
+      this.configService.get<string>('jamendo.apiBase') || 'https://api.jamendo.com/v3.0';
   }
 
   async getMetadata(trackId: string): Promise<Partial<StreamMetadata>> {
@@ -44,7 +50,9 @@ export class JamendoService implements IStreamingService {
         popularity: track.stats?.rate || 50,
       };
     } catch (error: any) {
-      this.logger.warn(`Failed to fetch Jamendo metadata for ${trackId}: ${error?.message || error}`);
+      this.logger.warn(
+        `Failed to fetch Jamendo metadata for ${trackId}: ${error?.message || error}`,
+      );
       return {
         title: `Jamendo Track #${trackId}`,
         artist: 'Jamendo Artist',
@@ -79,7 +87,10 @@ export class JamendoService implements IStreamingService {
           metadata: {
             title: track.name || `Jamendo Track #${trackId}`,
             artist: track.artist_name || 'Jamendo Artist',
-            albumArt: track.album_image || track.image || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300',
+            albumArt:
+              track.album_image ||
+              track.image ||
+              'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300',
             duration: track.duration || 180,
             genre: track.musicinfo?.tags?.genres || ['indie'],
             popularity: track.stats?.rate || 50,
@@ -96,7 +107,8 @@ export class JamendoService implements IStreamingService {
       metadata: {
         title: metadata.title || `Jamendo Track #${trackId}`,
         artist: metadata.artist || 'Jamendo Artist',
-        albumArt: metadata.albumArt || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300',
+        albumArt:
+          metadata.albumArt || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300',
         duration: metadata.duration || 215,
         genre: metadata.genre || ['pop', 'rock'],
       },

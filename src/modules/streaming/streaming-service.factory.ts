@@ -17,7 +17,9 @@ export class StreamingServiceFactory {
       case 'youtube':
         return this.youtubeService;
       default:
-        throw new BadRequestException(`Unsupported streaming service: ${service}. Allowed: jamendo, youtube`);
+        throw new BadRequestException(
+          `Unsupported streaming service: ${service}. Allowed: jamendo, youtube`,
+        );
     }
   }
 }

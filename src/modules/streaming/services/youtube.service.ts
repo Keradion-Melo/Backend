@@ -2,12 +2,18 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import youtubedl from 'youtube-dl-exec';
-import { IStreamingService, StreamMetadata, StreamResult, SearchResultItem } from '../interfaces/streaming-service.interface';
+import {
+  IStreamingService,
+  StreamMetadata,
+  StreamResult,
+  SearchResultItem,
+} from '../interfaces/streaming-service.interface';
 
 @Injectable()
 export class YouTubeService implements IStreamingService {
   private readonly logger = new Logger(YouTubeService.name);
   private readonly apiKey?: string;
+  private readonly streamCache = new Map<string, { url: string; expiresAt: number }>();
 
   constructor(private readonly configService: ConfigService) {
     this.apiKey = this.configService.get<string>('youtube.apiKey');
@@ -41,32 +47,60 @@ export class YouTubeService implements IStreamingService {
     }
 
     return {
-      title: `YouTube Video ${trackId}`,
-      artist: 'YouTube Artist',
+      title: `YouTube Track #${trackId}`,
+      artist: 'YouTube Creator',
       albumArt: `https://img.youtube.com/vi/${trackId}/hqdefault.jpg`,
       duration: 213,
       genre: ['youtube'],
     };
   }
 
-  async getStreamUrl(trackId: string): Promise<StreamResult> {
-    const metadata = await this.getMetadata(trackId);
-    let streamUrl: string;
+  async getRawCdnUrl(trackId: string): Promise<string> {
+    const cached = this.streamCache.get(trackId);
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.url;
+    }
 
     try {
-      // Extract direct audio stream URL via youtube-dl-exec
       const output = await youtubedl(`https://www.youtube.com/watch?v=${trackId}`, {
         getUrl: true,
-        format: 'bestaudio[ext=m4a]/bestaudio/best',
+        format: 'ba/b',
         noCheckCertificates: true,
         noWarnings: true,
+        jsRuntimes: 'node',
       });
 
-      streamUrl = typeof output === 'string' ? output.trim() : `https://www.youtube.com/watch?v=${trackId}`;
+      const streamUrl =
+        typeof output === 'string' ? output.trim() : `https://www.youtube.com/watch?v=${trackId}`;
+      this.streamCache.set(trackId, {
+        url: streamUrl,
+        expiresAt: Date.now() + 2 * 60 * 60 * 1000, // Cache for 2 hours
+      });
+      return streamUrl;
     } catch (err: any) {
-      this.logger.warn(`Failed to extract direct audio URL with youtube-dl-exec for ${trackId}: ${err?.message || err}`);
-      streamUrl = `https://www.youtube.com/watch?v=${trackId}`;
+      this.logger.warn(
+        `Failed to extract direct audio URL with youtube-dl-exec for ${trackId}: ${err?.message || err}`,
+      );
+      const extractionError: any = new Error(
+        `Could not extract audio for YouTube track ${trackId}`,
+      );
+      extractionError.cause = err;
+      throw extractionError;
     }
+  }
+
+  async getStreamUrl(trackId: string): Promise<StreamResult> {
+    const metadata = await this.getMetadata(trackId);
+
+    // Ensure the raw URL can be extracted and cached
+    try {
+      await this.getRawCdnUrl(trackId);
+    } catch (err: any) {
+      this.logger.warn(`Pre-extraction error for ${trackId}: ${err?.message || err}`);
+    }
+
+    // Return proxy URL to bypass browser CORS / User-Agent blocks on googlevideo.com
+    const streamUrl = `http://localhost:3000/api/stream/proxy?trackId=${trackId}&service=youtube`;
 
     return {
       streamUrl,

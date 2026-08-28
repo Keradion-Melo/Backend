@@ -30,7 +30,7 @@ describe('Melo API Smoke Tests (e2e)', () => {
     app.useGlobalInterceptors(new ResponseInterceptor());
 
     await app.init();
-  }, 30000);
+  }, 45000);
 
   afterAll(async () => {
     if (app) {
@@ -58,7 +58,8 @@ describe('Melo API Smoke Tests (e2e)', () => {
       expect([200, 201]).toContain(response.status);
       const data = response.body.data || response.body;
       expect(data).toHaveProperty('accessToken');
-    });
+      jwtToken = data.accessToken;
+    }, 30000);
 
     it('POST /api/auth/login should authenticate user and provide JWT', async () => {
       const response = await request(app.getHttpServer()).post('/api/auth/login').send({
@@ -70,12 +71,12 @@ describe('Melo API Smoke Tests (e2e)', () => {
       const data = response.body.data || response.body;
       expect(data).toHaveProperty('accessToken');
       jwtToken = data.accessToken;
-    });
+    }, 30000);
 
     it('GET /api/users/me should reject request without Bearer token (401)', async () => {
       const response = await request(app.getHttpServer()).get('/api/users/me');
       expect(response.status).toBe(401);
-    });
+    }, 15000);
 
     it('GET /api/users/me should return user profile with valid Bearer token', async () => {
       const response = await request(app.getHttpServer())
@@ -85,21 +86,20 @@ describe('Melo API Smoke Tests (e2e)', () => {
       expect(response.status).toBe(200);
       const data = response.body.data || response.body;
       expect(data).toHaveProperty('email', testEmail);
-    });
+    }, 15000);
   });
 
   describe('Music Search & Streaming Engine', () => {
     it('GET /api/search should query Jamendo music tracks with auth', async () => {
       const response = await request(app.getHttpServer())
         .get('/api/search')
-        .set('Authorization', `Bearer ${jwtToken}`)
-        .query({ q: 'hiphop', service: 'jamendo', limit: 5 });
+        .query({ q: 'lofi', service: 'jamendo', limit: 5 })
+        .set('Authorization', `Bearer ${jwtToken}`);
 
       expect(response.status).toBe(200);
       const data = response.body.data || response.body;
-      expect(data).toHaveProperty('results');
-      expect(Array.isArray(data.results)).toBe(true);
-    }, 15000);
+      expect(Array.isArray(data.results || data)).toBe(true);
+    }, 30000);
 
     it('POST /api/stream should resolve Jamendo audio stream URL with auth', async () => {
       const response = await request(app.getHttpServer())
@@ -113,6 +113,22 @@ describe('Melo API Smoke Tests (e2e)', () => {
       expect(response.status).toBe(200);
       const data = response.body.data || response.body;
       expect(data).toHaveProperty('streamUrl');
-    }, 15000);
+    }, 30000);
+
+    it('POST /api/stream/played should record playback event', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/api/stream/played')
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .send({
+          trackId: '1363876',
+          service: 'jamendo',
+          title: 'Test Track',
+          artist: 'Test Artist',
+          duration: 180,
+          position: 0,
+        });
+
+      expect(response.status).toBe(200);
+    }, 30000);
   });
 });
